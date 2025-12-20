@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎾 Счётчик тенниса</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Встроенные стили для надёжности */
+        :root { --primary: #3399ff; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; color: white; }
+        }
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .player {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-width: 120px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .player { background: #2a2a2a; }
+        }
+        .score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .status {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Счётчик тенниса</h1>
+    <div class="scoreboard">
+        <div class="player">
+            <div id="player1-name">Игрок 1</div>
+            <div class="score" id="score1">0</div>
+            <button onclick="changeScore(1, 1)">+</button>
+            <button onclick="changeScore(1, -1)">-</button>
+        </div>
+        <div class="player">
+            <div id="player2-name">Игрок 2</div>
+            <div class="score" id="score2">0</div>
+            <button onclick="changeScore(2, 1)">+</button>
+            <button onclick="changeScore(2, -1)">-</button>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="newGame()" style="background:#4CAF50;">Новая игра</button>
+        <button onclick="resetGame()" style="background:#ff9800;">Сброс</button>
+        <button onclick="sendToIFTTT()" style="background:#9c27b0;">IFTTT</button>
+    </div>
+    
+    <div class="status" id="status">Готов к игре</div>
+    
+    <script>
+        let scores = { p1: 0, p2: 0, sets: [0, 0] };
+        
+        function changeScore(player, delta) {
+            if (player === 1) scores.p1 = Math.max(0, scores.p1 + delta);
+            else scores.p2 = Math.max(0, scores.p2 + delta);
+            updateUI();
+        }
+        
+        function newGame() {
+            scores.p1 = scores.p2 = 0;
+            updateUI();
+            showStatus('Новая игра началась');
+        }
+        
+        function resetGame() {
+            scores = { p1: 0, p2: 0, sets: [0, 0] };
+            updateUI();
+            showStatus('Счёт сброшен');
+        }
+        
+        async function sendToIFTTT() {
+            const webhook = localStorage.getItem('ifttt_url');
+            if (!webhook) {
+                const url = prompt('Введите IFTTT Webhook URL:');
+                if (url) localStorage.setItem('ifttt_url', url);
+                return;
+            }
+            
+            const data = {
+                value1: Счёт: ${scores.p1}-${scores.p2},
+                value2: new Date().toLocaleString(),
+                value3: 'Telegram Tennis Counter'
+            };
+            
+            try {
+                await fetch(webhook, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            showStatus('Отправлено в IFTTT!');
+            } catch (e) {
+                showStatus('Ошибка отправки');
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('score1').textContent = scores.p1;
+            document.getElementById('score2').textContent = scores.p2;
+        }
+        
+        function showStatus(msg) {
+            document.getElementById('status').textContent = msg;
+        }
+        
+        // Telegram интеграция
+        if (typeof Telegram !== 'undefined') {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            
+            const user = Telegram.WebApp.initDataUnsafe?.user;
+            if (user && user.first_name) {
+                document.getElementById('player1-name').textContent = user.first_name + ' 1';
+                document.getElementById('player2-name').textContent = user.first_name + ' 2';
+            }
+        }
+        
+        updateUI();
+    </script>
+</body>
+</html>
