@@ -2,159 +2,153 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎾 Счётчик тенниса</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Счетчик настольного тенниса</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        /* Встроенные стили для надёжности */
-        :root { --primary: #3399ff; }
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            text-align: center;
-            margin: 0;
-            background: #f5f5f5;
-            min-height: 100vh;
-        }
-        @media (prefers-color-scheme: dark) {
-            body { background: #1a1a1a; color: white; }
-        }
-        .scoreboard {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 30px 0;
-        }
-        .player {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            min-width: 120px;
-        }
-        @media (prefers-color-scheme: dark) {
-            .player { background: #2a2a2a; }
-        }
-        .score {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 8px;
-            background: var(--primary);
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-        .controls {
-            margin: 20px 0;
-        }
-        .status {
-            margin-top: 20px;
-            color: #666;
-            font-size: 0.9rem;
-        }
-    </style>
 </head>
 <body>
-    <h1>🎯 Счётчик тенниса</h1>
-    <div class="scoreboard">
-        <div class="player">
-            <div id="player1-name">Игрок 1</div>
-            <div class="score" id="score1">0</div>
-            <button onclick="changeScore(1, 1)">+</button>
-            <button onclick="changeScore(1, -1)">-</button>
-        </div>
-        <div class="player">
-            <div id="player2-name">Игрок 2</div>
-            <div class="score" id="score2">0</div>
-            <button onclick="changeScore(2, 1)">+</button>
-            <button onclick="changeScore(2, -1)">-</button>
+    <div class="container">
+        <header>
+            <h1>🎾 Счетчик настольного тенниса</h1>
+            <div class="match-info">
+                <div class="sets-info">
+                    <div>Сет: <span id="currentSet">1</span>/<span id="totalSets">5</span></div>
+                    <div>Игра до: <span id="pointsToWin">11</span></div>
+                </div>
+                <div class="settings-btn" id="settingsBtn">⚙️</div>
+            </div>
+        </header>
+
+        <main>
+            <div class="scoreboard">
+                <!-- Игрок 1 -->
+                <div class="player" id="player1">
+                    <div class="player-header">
+                        <input type="text" class="player-name" value="Игрок 1" maxlength="15">
+                        <button class="player-color-btn" data-player="1">🎨</button>
+                    </div>
+                    <div class="score-display">
+                        <div class="current-score" id="score1">0</div>
+                    </div>
+                    <div class="sets-display">
+                        <div class="sets-container" id="sets1"></div>
+                    </div>
+                    <div class="score-controls">
+                        <button class="btn-minus" data-player="1">-</button>
+                        <button class="btn-plus" data-player="1">+</button>
+                    </div>
+                </div>
+
+                <div class="vs">VS</div>
+
+                <!-- Игрок 2 -->
+                <div class="player" id="player2">
+                    <div class="player-header">
+                        <input type="text" class="player-name" value="Игрок 2" maxlength="15">
+                        <button class="player-color-btn" data-player="2">🎨</button>
+                    </div>
+                    <div class="score-display">
+                        <div class="current-score" id="score2">0</div>
+                    </div>
+                    <div class="sets-display">
+                        <div class="sets-container" id="sets2"></div>
+                    </div>
+                    <div class="score-controls">
+                        <button class="btn-minus" data-player="2">-</button>
+                        <button class="btn-plus" data-player="2">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="match-controls">
+                <button id="undoBtn" class="btn-secondary">↶ Отменить</button>
+                <button id="newSetBtn" class="btn-primary">Новый сет</button>
+                <button id="newMatchBtn" class="btn-danger">Новая игра</button>
+            </div>
+
+            <div class="history">
+                <h3>История игры</h3>
+                <div id="historyLog"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Настройки игры</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="totalSetsSelect">Количество сетов:</label>
+                    <select id="totalSetsSelect">
+                        <option value="3">3 (победит 2)</option>
+                        <option value="5" selected>5 (победит 3)</option>
+                        <option value="7">7 (победит 4)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pointsToWinSelect">Очков для победы в сете:</label>
+                    <select id="pointsToWinSelect">
+                        <option value="11" selected>11 очков</option>
+                        <option value="21">21 очко</option>
+                        <option value="31">31 очко</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="minLeadSelect">Минимальная разница:</label>
+                    <select id="minLeadSelect">
+                        <option value="2" selected>2 очка</option>
+                        <option value="1">1 очко</option>
+                    </select>
+                </div>
+                <div class="color-picker">
+                    <h4>Цвета игроков:</h4>
+                    <div class="color-options">
+                        <div class="color-option" style="background-color: #3498db;" data-color="#3498db" data-player="1"></div>
+                        <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c" data-player="2"></div>
+                        <div class="color-option" style="background-color: #2ecc71;" data-color="#2ecc71"></div>
+                        <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12"></div>
+                        <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+                        <div class="color-option" style="background-color: #1abc9c;" data-color="#1abc9c"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveSettings" class="btn-primary">Сохранить</button>
+            </div>
         </div>
     </div>
-    
-    <div class="controls">
-        <button onclick="newGame()" style="background:#4CAF50;">Новая игра</button>
-        <button onclick="resetGame()" style="background:#ff9800;">Сброс</button>
-        <button onclick="sendToIFTTT()" style="background:#9c27b0;">IFTTT</button>
+
+    <!-- Модальное окно выбора цвета -->
+    <div id="colorModal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h3>Выберите цвет</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="color-options-grid">
+                    <div class="color-option" style="background-color: #3498db;" data-color="#3498db"></div>
+                    <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+                    <div class="color-option" style="background-color: #2ecc71;" data-color="#2ecc71"></div>
+                    <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12"></div>
+                    <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+                    <div class="color-option" style="background-color: #1abc9c;" data-color="#1abc9c"></div>
+                    <div class="color-option" style="background-color: #34495e;" data-color="#34495e"></div>
+                    <div class="color-option" style="background-color: #e67e22;" data-color="#e67e22"></div>
+                    <div class="color-option" style="background-color: #16a085;" data-color="#16a085"></div>
+                    <div class="color-option" style="background-color: #8e44ad;" data-color="#8e44ad"></div>
+                    <div class="color-option" style="background-color: #27ae60;" data-color="#27ae60"></div>
+                    <div class="color-option" style="background-color: #d35400;" data-color="#d35400"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="status" id="status">Готов к игре</div>
-    
-    <script>
-        let scores = { p1: 0, p2: 0, sets: [0, 0] };
-        
-        function changeScore(player, delta) {
-            if (player === 1) scores.p1 = Math.max(0, scores.p1 + delta);
-            else scores.p2 = Math.max(0, scores.p2 + delta);
-            updateUI();
-        }
-        
-        function newGame() {
-            scores.p1 = scores.p2 = 0;
-            updateUI();
-            showStatus('Новая игра началась');
-        }
-        
-        function resetGame() {
-            scores = { p1: 0, p2: 0, sets: [0, 0] };
-            updateUI();
-            showStatus('Счёт сброшен');
-        }
-        
-        async function sendToIFTTT() {
-            const webhook = localStorage.getItem('ifttt_url');
-            if (!webhook) {
-                const url = prompt('Введите IFTTT Webhook URL:');
-                if (url) localStorage.setItem('ifttt_url', url);
-                return;
-            }
-            
-            const data = {
-                value1: Счёт: ${scores.p1}-${scores.p2},
-                value2: new Date().toLocaleString(),
-                value3: 'Telegram Tennis Counter'
-            };
-            
-            try {
-                await fetch(webhook, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-            showStatus('Отправлено в IFTTT!');
-            } catch (e) {
-                showStatus('Ошибка отправки');
-            }
-        }
-        
-        function updateUI() {
-            document.getElementById('score1').textContent = scores.p1;
-            document.getElementById('score2').textContent = scores.p2;
-        }
-        
-        function showStatus(msg) {
-            document.getElementById('status').textContent = msg;
-        }
-        
-        // Telegram интеграция
-        if (typeof Telegram !== 'undefined') {
-            Telegram.WebApp.ready();
-            Telegram.WebApp.expand();
-            
-            const user = Telegram.WebApp.initDataUnsafe?.user;
-            if (user && user.first_name) {
-                document.getElementById('player1-name').textContent = user.first_name + ' 1';
-                document.getElementById('player2-name').textContent = user.first_name + ' 2';
-            }
-        }
-        
-        updateUI();
-    </script>
+
+    <script src="script.js"></script>
 </body>
 </html>
